@@ -19,6 +19,7 @@
 
 #define _USE_MATH_DEFINES
 
+
 #include <mpi.h>
 #include "commons.h"
 #include "grid.h"
