@@ -20,6 +20,31 @@
 #include "em_field.h"
 //#define OLD_ACCESS
 
+
+void EM_FIELD::debugEMDoublePrecision(){
+    int id = mygrid->myid;  // get current task id
+    int step = mygrid->istep; // get current temporal step
+    std::stringstream ss;
+    ss << "EM_FIELD_" << id << "_" << step << ".txt"; //filename
+    std::ofstream of;
+    of.open(ss.str().c_str()); // convert ss into a C string and open file
+
+    // loop over grid nodes of current task
+    for(int i=0; i<mygrid->Nloc[0]; i++){
+        for(int j=0; j<mygrid->Nloc[1]; j++){
+            for(int k=0; k<mygrid->Nloc[2]; k++){
+                // write: integer positions - half-integer positions - E field - B field
+                of << mygrid->cirloc[0][i] <<" "<< mygrid->cirloc[1][j] <<" "<< mygrid->cirloc[2][k] <<" "<<
+                      mygrid->chrloc[0][i] <<" "<< mygrid->chrloc[1][j] <<" "<< mygrid->chrloc[2][k] <<" "<<
+                      E0(i,j,k) << " " << E1(i,j,k) << " " << E2(i,j,k) << " "<<
+                      B0(i,j,k) << " " << B1(i,j,k) << " " << B2(i,j,k) <<  std::endl;
+            }
+        }
+    }
+    of.close();
+
+}
+
 EM_FIELD::EM_FIELD()
 {
   allocated = false;

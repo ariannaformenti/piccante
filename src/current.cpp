@@ -31,6 +31,49 @@ CURRENT::~CURRENT()
 }
 
 
+void CURRENT::debugJDoublePrecision(){
+    int id = mygrid->myid;  // get current task id
+    int step = mygrid->istep; // get current temporal step
+    std::stringstream ss;
+    ss << "J_" << id << "_" << step << ".txt"; //filename
+    std::ofstream of;
+    of.open(ss.str().c_str()); // convert ss into a C string and open file
+
+    // loop over grid nodes of current task
+    for(int i=0; i<mygrid->Nloc[0]; i++){
+        for(int j=0; j<mygrid->Nloc[1]; j++){
+            for(int k=0; k<mygrid->Nloc[2]; k++){
+                // write: integer positions - half-integer positions - E field - B field
+                of << mygrid->cirloc[0][i] <<" "<< mygrid->cirloc[1][j] <<" "<< mygrid->cirloc[2][k] <<" "<<
+                      mygrid->chrloc[0][i] <<" "<< mygrid->chrloc[1][j] <<" "<< mygrid->chrloc[2][k] <<" "<<
+                      Jx(i,j,k) << " " << Jy(i,j,k) << " " << Jz(i,j,k) <<  std::endl;
+            }
+        }
+    }
+    of.close();
+}
+
+void CURRENT::debugRhoDoublePrecision(){
+    int id = mygrid->myid;  // get current task id
+    int step = mygrid->istep; // get current temporal step
+    std::stringstream ss;
+    ss << "RHO_" << id << "_" << step << ".txt"; //filename
+    std::ofstream of;
+    of.open(ss.str().c_str()); // convert ss into a C string and open file
+
+    // loop over grid nodes of current task
+    for(int i=0; i<mygrid->Nloc[0]; i++){
+        for(int j=0; j<mygrid->Nloc[1]; j++){
+            for(int k=0; k<mygrid->Nloc[2]; k++){
+                // write: integer positions - half-integer positions - E field - B field
+                of << mygrid->chrloc[0][i] <<" "<< mygrid->chrloc[1][j] <<" "<< mygrid->chrloc[2][k] <<" "
+                   << density(i,j,k) <<  std::endl;
+            }
+        }
+    }
+    of.close();
+}
+
 void CURRENT::allocate(GRID *grid) //field allocation
 {
   mygrid = grid;

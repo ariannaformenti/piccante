@@ -59,6 +59,9 @@ public:
 
   void eraseDensity();
 
+  void debugJDoublePrecision();
+  void debugRhoDoublePrecision();
+
   //PUBLIC INLINE FUNCTIONS
 
   inline double & Jx(int i, int j, int k) { return val[my_indice(mygrid->getEdge(), YGrid_factor, ZGrid_factor, 0, i, j*YGrid_factor, k*ZGrid_factor, N_grid[0], N_grid[1], N_grid[2], Ncomp)]; }

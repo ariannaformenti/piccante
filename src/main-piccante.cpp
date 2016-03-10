@@ -170,15 +170,32 @@ int main(int narg, char **args)
 
     manager.callDiags(grid.istep);
 
+    myfield.debugEMDoublePrecision(); // campi entrambi a tempi interi
+
     myfield.openBoundariesE_1();
     myfield.new_halfadvance_B();
     myfield.boundary_conditions();
+
+    //*********DEBUG*********
+    current.eraseDensity();
+    for (spec_iterator = species.begin(); spec_iterator != species.end(); spec_iterator++) {
+      (*spec_iterator)->density_deposition_standard(&current,true);
+    }
+    current.pbc();
+
+    current.debugRhoDoublePrecision();  // intero
+    //*********
 
     current.setAllValuesToZero();
     for (spec_iterator = species.begin(); spec_iterator != species.end(); spec_iterator++) {
       (*spec_iterator)->current_deposition_standard(&current);
     }
     current.pbc();
+
+    current.debugJDoublePrecision(); // semiintero
+
+
+
 
     for (spec_iterator = species.begin(); spec_iterator != species.end(); spec_iterator++) {
       (*spec_iterator)->position_parallel_pbc();
@@ -191,6 +208,8 @@ int main(int narg, char **args)
     myfield.openBoundariesE_2();
     myfield.new_halfadvance_B();
     myfield.boundary_conditions();
+
+
 
     for (spec_iterator = species.begin(); spec_iterator != species.end(); spec_iterator++) {
       if (grid.isRadiationFrictionEnabled()) {

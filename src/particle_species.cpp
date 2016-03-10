@@ -2932,7 +2932,6 @@ void SPECIE::add_momenta(my_rng_generator& ext_rng, double uxin, double uyin, do
 
 }
 
-
 void SPECIE::current_deposition_standard(CURRENT *current)
 {
   if (mygrid->withParticles == NO||isFrozen)
