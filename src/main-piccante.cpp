@@ -183,7 +183,8 @@ int main(int narg, char **args)
     }
     current.pbc();
 
-    current.debugRhoDoublePrecision();  // intero
+    current.debugRhoBinPrecision();
+    //current.debugRhoDoublePrecision();  // intero
     //*********
 
     current.setAllValuesToZero();
@@ -192,9 +193,10 @@ int main(int narg, char **args)
     }
     current.pbc();
 
-    current.debugJDoublePrecision(); // semiintero
+    //current.debugJDoublePrecision(); // semiintero
 
-
+    current.debugJBinPrecision();
+    myfield.debugEMBinPrecision();
 
 
     for (spec_iterator = species.begin(); spec_iterator != species.end(); spec_iterator++) {

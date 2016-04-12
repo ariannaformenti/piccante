@@ -30,6 +30,57 @@ CURRENT::~CURRENT()
   free(val);
 }
 
+void CURRENT::debugJBinPrecision(){
+    int id = mygrid->myid;  // get current task id
+    int step = mygrid->istep; // get current temporal step
+    std::stringstream ss;
+    ss << "J_" << id << "_" << step << ".bin"; //filename
+    std::ofstream of(ss.str().c_str(),std::ios::binary);
+    //of.open(ss.str().c_str()); // convert ss into a C string and open file
+
+    // loop over grid nodes of current task
+    for(int i=0; i<mygrid->Nloc[0]; i++){
+        for(int j=0; j<mygrid->Nloc[1]; j++){
+            for(int k=0; k<mygrid->Nloc[2]; k++){
+                // write: integer positions - half-integer positions - E field - B field
+                double d[9];
+                d[0] = mygrid->cirloc[0][i];
+                d[1] = mygrid->cirloc[1][j];
+                d[2] = mygrid->cirloc[2][k];
+                d[3] = mygrid->chrloc[0][i];
+                d[4] = mygrid->chrloc[1][j];
+                d[5] = mygrid->chrloc[2][k];
+                d[6] = Jx(i,j,k);
+                d[7] = Jy(i,j,k);
+                d[8] = Jz(i,j,k);
+                of.write((char*) d ,sizeof(double)*9);
+            }
+        }
+    }
+    of.close();
+}
+
+void CURRENT::debugRhoBinPrecision(){
+    int id = mygrid->myid;  // get current task id
+    int step = mygrid->istep; // get current temporal step
+    std::stringstream ss;
+    ss << "RHO_" << id << "_" << step << ".bin"; //filename
+    std::ofstream of(ss.str().c_str(),std::ios::binary);
+    // loop over grid nodes of current task
+    for(int i=0; i<mygrid->Nloc[0]; i++){
+        for(int j=0; j<mygrid->Nloc[1]; j++){
+            for(int k=0; k<mygrid->Nloc[2]; k++){
+                double d[4];
+                d[0] = mygrid->cirloc[0][i];
+                d[1] = mygrid->cirloc[1][j];
+                d[2] = mygrid->cirloc[2][k];
+                d[3] = density(i,j,k);
+                of.write((char*) d ,sizeof(double)*4);
+            }
+        }
+    }
+    of.close();
+}
 
 void CURRENT::debugJDoublePrecision(){
     int id = mygrid->myid;  // get current task id

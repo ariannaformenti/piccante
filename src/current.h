@@ -59,6 +59,8 @@ public:
 
   void eraseDensity();
 
+  void debugJBinPrecision();
+  void debugRhoBinPrecision();
   void debugJDoublePrecision();
   void debugRhoDoublePrecision();
 

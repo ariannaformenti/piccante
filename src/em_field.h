@@ -166,6 +166,8 @@ public:
   void fftw_filter_Efield();
 
   void debugEMDoublePrecision();
+  void debugEMBinPrecision();
+
 
   //PUBLIC INLINE FUNCTIONS
   //  static inline int my_indice(int edge, int YGrid_factor, int ZGrid_factor, int c, int i, int j, int k, int Nx, int Ny, int Nz, int Nc){
