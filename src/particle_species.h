@@ -76,6 +76,7 @@ public:
   void output_extrems(int istep, std::ofstream &ff);
   void position_parallel_pbc();
   void position_obc();
+  void debug_assign_particle_position_and_momentum(int index, double x, double y, double z, double px, double py, double pz);
   void momenta_advance(EM_FIELD *ebfield);
   void momentaStretchedAdvance(EM_FIELD *ebfield);
   void momenta_advance_with_friction(EM_FIELD *ebfield, double lambda);
@@ -83,6 +84,7 @@ public:
   void add_momenta(double uxin, double uyin, double uzin);
   void add_momenta(my_rng_generator& ext_rng, double uxin, double uyin, double uzin, tempDistrib distribution);
   void current_deposition_standard(CURRENT *current);
+  void current_deposition_esirkepov(CURRENT *current);
   void currentStretchedDepositionStandard(CURRENT *current);
   void density_deposition_standard(CURRENT *current, bool withSign);
   void densityStretchedDepositionStandard(CURRENT *current, bool withSign);
