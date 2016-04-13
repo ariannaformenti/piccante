@@ -3335,170 +3335,661 @@ void SPECIE::current_deposition_esirkepov(CURRENT *current)
 
 
   case 2:
-    for (p = 0; p < Np; p++)
-    {
-      double ux, uy, uz;
-      ux = ru(3,p);
-      uy = ru(4,p);
-      uz = ru(5,p);
-
-
-      gamma_i = 1. / sqrt(1 + ux*ux + uy*uy + uz*uz);
-      for (c = 0; c < 3; c++)
+      for (p = 0; p < Np; p++)
       {
-        vv[c] = gamma_i*ru(c + 3, p);
-        hiw[c][0] = wiw[c][0] = 0;
-        hiw[c][1] = wiw[c][1] = 0;
-        hiw[c][2] = wiw[c][2] = 1;
-        hiw[c][3] = wiw[c][3] = 0;
-        hiw[c][4] = wiw[c][4] = 0;
-        hii[c] = wii[c] = 0;
-      }
-      for (c = 0; c < 2; c++)
-      {
-        rr = mygrid->dri[c] * (ru(c,p) - mygrid->rminloc[c]);
-        rh = rr - 0.5;
-
-        wii[c] = (int)floor(rr + 0.5); //whole integer int
-        hii[c] = (int)floor(rr);     //half integer int
-        rr -= wii[c];
-        rh -= hii[c];
-        rr2 = rr*rr;
-        rh2 = rh*rh;
-
-        // form-factors at time step n
-        wiw[c][0] = 0.;
-        wiw[c][1] = 0.5*(0.25 + rr2 - rr);
-        wiw[c][2] = 0.75 - rr2;
-        wiw[c][3] = 1. - wiw[c][1] - wiw[c][2];
-        wiw[c][4] = 0;
-
-        ru(c, p) += dt*vv[c]; // advance the quasi-particle
-
-        rr = mygrid->dri[c] * (ru(c,p) - mygrid->rminloc[c]);
-        rh = rr - 0.5;
-
-        // form-factors at time step n+1
-        wii_new[c] = (int)floor(rr + 0.5); //whole integer int
-        hii_new[c] = (int)floor(rr);     //half integer int
-        rr -= wii_new[c];
-        rh -= hii_new[c];
-        rr2 = rr*rr;
-        rh2 = rh*rh;
+        double ux, uy, uz;
+        ux = ru(3,p);
+        uy = ru(4,p);
+        uz = ru(5,p);
 
 
-        switch (wii_new[c]-wii[c])
+        gamma_i = 1. / sqrt(1 + ux*ux + uy*uy + uz*uz);
+
+        for (c = 0; c < 3; c++)
         {
-        case -1: // the quasi-particle moved backwards
-            wiw_new[c][0] = 0.5*(0.25 + rr2 - rr);
-            wiw_new[c][1] = 0.75 - rr2;
-            wiw_new[c][2] = 1. - wiw_new[c][0] - wiw_new[c][1];
-            wiw_new[c][3] = 0.;
-            wiw_new[c][4] = 0.;
-            break;
-        case  0: // nearest node hasn't changed
-            wiw_new[c][0] = 0.;
-            wiw_new[c][1] = 0.5*(0.25 + rr2 - rr);
-            wiw_new[c][2] = 0.75 - rr2;
-            wiw_new[c][3] = 1. - wiw_new[c][1] - wiw_new[c][2];
-            wiw_new[c][4] = 0;
-            break;
-
-        case 1: // the quasi-particle moved forward
-            wiw_new[c][0] = 0.;
-            wiw_new[c][1] = 0.;
-            wiw_new[c][2] = 0.5*(0.25 + rr2 - rr);
-            wiw_new[c][3] = 0.75 - rr2;
-            wiw_new[c][4] = 1. - wiw_new[c][2] - wiw_new[c][3];
-            break;
+          vv[c] = gamma_i*ru(c + 3, p);
         }
 
-      // difference of new and old form-factors
-      wiw_new[c][0] -= wiw[c][0];
-      wiw_new[c][1] -= wiw[c][1];
-      wiw_new[c][2] -= wiw[c][2];
-      wiw_new[c][3] -= wiw[c][3];
-      wiw_new[c][4] -= wiw[c][4];
-
-      }
-
-      k1 = k2 = 0;
-      double W[5][5][3]; // density decomposition
-
-      for(j=0; j<5; j++){
-          for(i=0; i<5; i++){
-              W[i][j][0] = wiw_new[0][i]*(wiw[1][j]+0.5*wiw_new[1][j]);
-              W[i][j][1] = wiw_new[1][j]*(wiw[0][i]+0.5*wiw_new[0][i]);
-              W[i][j][2] = wiw[0][i]*wiw[1][j]+0.5*wiw_new[0][i]*wiw[1][j]+0.5*wiw[0][i]*wiw_new[1][j]+wiw_new[0][i]*wiw_new[1][j]/3.;
-          }
-      }
-
-      double Jxloc[5][5], Jyloc[5][5], Jzloc[5][5]; // local current contribution of the quasi-particle
-      for(i=0;i<5;i++){
-          for(j=0;j<5;j++){
-              Jxloc[i][j] =0.0;
-              Jyloc[i][j] =0.0;
-              Jzloc[i][j] =0.0;
-          }
-      }
-
-      for (j = 0; j < 5; j++){
-          Jxloc[0][j] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[0][j][0];
-          Jzloc[0][j] = w(p) * chargeSign * vv[2] * W[0][j][2];
-      }
-
-      for (i = 0; i < 5; i++){
-          Jyloc[i][0] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[i][0][1];
-          Jzloc[i][0] = w(p) * chargeSign * vv[2] * W[i][0][2];
-      }
+          wiw[0][0] = wiw_new[0][0] = 0.0;
+          wiw[0][1] = wiw_new[0][1] = 0.0;
+          wiw[0][2] = wiw_new[0][2] = 0.0;
+          wiw[0][3] = wiw_new[0][3] = 0.0;
+          wiw[0][4] = wiw_new[0][4] = 0.0;
+          wiw[1][0] = wiw_new[1][0] = 0.0;
+          wiw[1][1] = wiw_new[1][1] = 0.0;
+          wiw[1][2] = wiw_new[1][2] = 0.0;
+          wiw[1][3] = wiw_new[1][3] = 0.0;
+          wiw[1][4] = wiw_new[1][4] = 0.0;
+          wiw[2][0] = wiw_new[2][0] = 0.0;
+          wiw[2][1] = wiw_new[2][1] = 0.0;
+          wiw[2][2] = wiw_new[2][2] = 0.0;
+          wiw[2][3] = wiw_new[2][3] = 0.0;
+          wiw[2][4] = wiw_new[2][4] = 0.0;
 
 
-      /*      for (j = 1; j < 5; j++)
-      {
-        for (i = 1; i < 5; i++)
+
+        //std::memset(wiw,0,sizeof(wiw));
+          //std::memset(wiw_new,0,sizeof(wiw_new));
+
+        /*for (c = 0; c < 2; c++)
         {
+          rr = mygrid->dri[c] * (ru(c,p) - mygrid->rminloc[c]);
 
-          Jxloc[i][j] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[i][j][0] + Jxloc[i-1][j];
-          Jyloc[i][j] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[i][j][1] + Jyloc[i][j-1];
-          Jzloc[i][j] = w(p) * chargeSign * vv[2] * W[i][j][2];
-        }
+          wii[c] = (int)floor(rr + 0.5); //whole integer int
+          rr -= wii[c];
+          rr2 = rr*rr;
+
+          // form-factors at time step n
+          //wiw[c][0] = 0;
+          wiw[c][1] = 0.5*(0.25 + rr2 - rr);
+          wiw[c][2] = 0.75 - rr2;
+          wiw[c][3] = 1. - wiw[c][1] - wiw[c][2];
+          //wiw[c][4] = 0;
+
+          ru(c, p) += dt*vv[c]; // advance the quasi-particle
+
+          rr = mygrid->dri[c] * (ru(c,p) - mygrid->rminloc[c]);
+
+          // form-factors at time step n+1
+          wii_new[c] = (int)floor(rr + 0.5); //whole integer int
+          rr -= wii_new[c];
+          rr2 = rr*rr;
+
+
+          switch (wii_new[c]-wii[c])
+          {
+          case -1: // the quasi-particle moved backwards
+              wiw_new[c][0] = 0.5*(0.25 + rr2 - rr);
+              wiw_new[c][1] = 0.75 - rr2;
+              wiw_new[c][2] = 1. - wiw_new[c][0] - wiw_new[c][1];
+              //wiw_new[c][3] = 0.;
+              //wiw_new[c][4] = 0.;
+              break;
+          case  0: // nearest node hasn't changed
+              //wiw_new[c][0] = 0.;
+              wiw_new[c][1] = 0.5*(0.25 + rr2 - rr);
+              wiw_new[c][2] = 0.75 - rr2;
+              wiw_new[c][3] = 1. - wiw_new[c][1] - wiw_new[c][2];
+              //wiw_new[c][4] = 0;
+              break;
+
+          case 1: // the quasi-particle moved forward
+              //wiw_new[c][0] = 0.;
+              //wiw_new[c][1] = 0.;
+              wiw_new[c][2] = 0.5*(0.25 + rr2 - rr);
+              wiw_new[c][3] = 0.75 - rr2;
+              wiw_new[c][4] = 1. - wiw_new[c][2] - wiw_new[c][3];
+              break;
+          }
+
+        // difference of new and old form-factors
+        wiw_new[c][0] -= wiw[c][0];
+        wiw_new[c][1] -= wiw[c][1];
+        wiw_new[c][2] -= wiw[c][2];
+        wiw_new[c][3] -= wiw[c][3];
+        wiw_new[c][4] -= wiw[c][4];
+
         }*/
-      for (j = 0; j < 5; j++)
-        {
-          for (i = 1; i < 5; i++)
-            {
-              Jxloc[i][j] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[i][j][0] + Jxloc[i-1][j];
-              Jzloc[i][j] = w(p) * chargeSign * vv[2] * W[i][j][2];
-            }
-        }
 
 
-      for (j = 1; j < 5; j++)
-        {
-          for (i = 0; i < 5; i++)
-            {
-              Jyloc[i][j] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[i][j][1] + Jyloc[i][j-1];
-              Jzloc[i][j] = w(p) * chargeSign * vv[2] * W[i][j][2];
-            }
-        }
+          // c = 0
 
-      // compute total current
-      for (j = 0; j < 5; j++)
-      {
-        j1 = j + wii[1] - 2;
+          rr = mygrid->dri[0] * (ru(0,p) - mygrid->rminloc[0]);
 
-        for (i = 0; i < 5; i++)
-        {
-            i1 = i + wii[0] - 2;
+          wii[0] = (int)floor(rr + 0.5); //whole integer int
+          rr -= wii[0];
+          rr2 = rr*rr;
 
-            current->Jx(i1, j1, k1) += Jxloc[i][j];
-            current->Jy(i1, j1, k1) += Jyloc[i][j];
-            current->Jz(i1, j1, k1) += Jzloc[i][j];
-        }
+          // form-factors at time step n
+          //wiw[c][0] = 0;
+          wiw[0][1] = 0.5*(0.25 + rr2 - rr);
+          wiw[0][2] = 0.75 - rr2;
+          wiw[0][3] = 0.5*(0.25 + rr2 + rr);
+          //wiw[c][4] = 0;
+
+          ru(0, p) += dt*vv[0]; // advance the quasi-particle
+
+          rr = mygrid->dri[0] * (ru(0,p) - mygrid->rminloc[0]);
+
+          // form-factors at time step n+1
+          wii_new[0] = (int)floor(rr + 0.5); //whole integer int
+          rr -= wii_new[0];
+          rr2 = rr*rr;
+
+
+          switch (wii_new[0]-wii[0])
+          {
+          case -1: // the quasi-particle moved backwards
+              wiw_new[0][0] = 0.5*(0.25 + rr2 - rr) - wiw[0][0];
+              wiw_new[0][1] = 0.75 - rr2 - wiw[0][1];
+              wiw_new[0][2] = 0.5*(0.25 + rr2 + rr) - wiw[0][2];
+              wiw_new[0][3] = - wiw[0][3];
+              wiw_new[0][4] = - wiw[0][4];
+              break;
+          case  0: // nearest node hasn't changed
+              wiw_new[0][0] = - wiw[0][0];
+              wiw_new[0][1] = 0.5*(0.25 + rr2 - rr) - wiw[0][1];
+              wiw_new[0][2] = 0.75 - rr2 - wiw[0][2];
+              wiw_new[0][3] = 0.5*(0.25 + rr2 + rr) - wiw[0][3];
+              wiw_new[0][4] = - wiw[0][4];
+              break;
+
+          case 1: // the quasi-particle moved forward
+              wiw_new[0][0] = - wiw[0][0];
+              wiw_new[0][1] = - wiw[0][1];
+              wiw_new[0][2] = 0.5*(0.25 + rr2 - rr) - wiw[0][2];
+              wiw_new[0][3] = 0.75 - rr2 - wiw[0][3];
+              wiw_new[0][4] = 0.5*(0.25 + rr2 + rr) - wiw[0][4];
+              break;
+          }
+
+        // difference of new and old form-factors
+        /*wiw_new[0][0] -= wiw[0][0];
+        wiw_new[0][1] -= wiw[0][1];
+        wiw_new[0][2] -= wiw[0][2];
+        wiw_new[0][3] -= wiw[0][3];
+        wiw_new[0][4] -= wiw[0][4];*/
+
+
+  // c = 1
+
+          rr = mygrid->dri[1] * (ru(1,p) - mygrid->rminloc[1]);
+
+          wii[1] = (int)floor(rr + 0.5); //whole integer int
+          rr -= wii[1];
+          rr2 = rr*rr;
+
+          // form-factors at time step n
+          //wiw[c][0] = 0;
+          wiw[1][1] = 0.5*(0.25 + rr2 - rr);
+          wiw[1][2] = 0.75 - rr2;
+          wiw[1][3] = 0.5*(0.25 + rr2 + rr);
+          //wiw[c][4] = 0;
+
+          ru(1, p) += dt*vv[1]; // advance the quasi-particle
+
+          rr = mygrid->dri[1] * (ru(1,p) - mygrid->rminloc[1]);
+
+          // form-factors at time step n+1
+          wii_new[1] = (int)floor(rr + 0.5); //whole integer int
+          rr -= wii_new[1];
+          rr2 = rr*rr;
+
+
+          switch (wii_new[1]-wii[1])
+          {
+          case -1: // the quasi-particle moved backwards
+              wiw_new[1][0] = 0.5*(0.25 + rr2 - rr) - wiw[1][0];
+              wiw_new[1][1] = 0.75 - rr2 - wiw[1][1];
+              wiw_new[1][2] = 0.5*(0.25 + rr2 + rr) - wiw[1][2];
+              wiw_new[1][3] = - wiw[1][3];
+              wiw_new[1][4] = - wiw[1][4];
+              break;
+          case  0: // nearest node hasn't changed
+              wiw_new[1][0] = - wiw[1][0];
+              wiw_new[1][1] = 0.5*(0.25 + rr2 - rr) - wiw[1][1];
+              wiw_new[1][2] = 0.75 - rr2 - wiw[1][2];
+              wiw_new[1][3] = 0.5*(0.25 + rr2 + rr) - wiw[1][3];
+              wiw_new[1][4] = - wiw[1][4];
+              break;
+
+          case 1: // the quasi-particle moved forward
+              wiw_new[1][0] = - wiw[1][0];
+              wiw_new[1][1] = - wiw[1][1];
+              wiw_new[1][2] = 0.5*(0.25 + rr2 - rr) - wiw[1][2];
+              wiw_new[1][3] = 0.75 - rr2 - wiw[1][3];
+              wiw_new[1][4] = 0.5*(0.25 + rr2 + rr) - wiw[1][4];
+              break;
+          }
+
+        // difference of new and old form-factors
+       /* wiw_new[1][0] -= wiw[1][0];
+        wiw_new[1][1] -= wiw[1][1];
+        wiw_new[1][2] -= wiw[1][2];
+        wiw_new[1][3] -= wiw[1][3];
+        wiw_new[1][4] -= wiw[1][4];*/
+
+
+  // -------------------------------------
+        k1 = k2 = 0;
+        double W[5][5][3]; // density decomposition
+
+          W[0][0][0] = wiw_new[0][0]*(wiw[1][0]+0.5*wiw_new[1][0]);
+          W[0][0][1] = wiw_new[1][0]*(wiw[0][0]+0.5*wiw_new[0][0]);
+          W[0][0][2] = wiw[0][0]*wiw[1][0]+0.5*wiw_new[0][0]*wiw[1][0]+0.5*wiw[0][0]*wiw_new[1][0]+wiw_new[0][0]*wiw_new[1][0]/3.;
+
+          W[0][1][0] = wiw_new[0][0]*(wiw[1][1]+0.5*wiw_new[1][1]);
+          W[0][1][1] = wiw_new[1][1]*(wiw[0][0]+0.5*wiw_new[0][0]);
+          W[0][1][2] = wiw[0][0]*wiw[1][1]+0.5*wiw_new[0][0]*wiw[1][1]+0.5*wiw[0][0]*wiw_new[1][1]+wiw_new[0][0]*wiw_new[1][1]/3.;
+
+          W[0][2][0] = wiw_new[0][0]*(wiw[1][2]+0.5*wiw_new[1][2]);
+          W[0][2][1] = wiw_new[1][2]*(wiw[0][0]+0.5*wiw_new[0][0]);
+          W[0][2][2] = wiw[0][0]*wiw[1][2]+0.5*wiw_new[0][0]*wiw[1][2]+0.5*wiw[0][0]*wiw_new[1][2]+wiw_new[0][0]*wiw_new[1][2]/3.;
+
+          W[0][3][0] = wiw_new[0][0]*(wiw[1][3]+0.5*wiw_new[1][3]);
+          W[0][3][1] = wiw_new[1][3]*(wiw[0][0]+0.5*wiw_new[0][0]);
+          W[0][3][2] = wiw[0][0]*wiw[1][3]+0.5*wiw_new[0][0]*wiw[1][3]+0.5*wiw[0][0]*wiw_new[1][3]+wiw_new[0][0]*wiw_new[1][3]/3.;
+
+          W[0][4][0] = wiw_new[0][0]*(wiw[1][4]+0.5*wiw_new[1][4]);
+          W[0][4][1] = wiw_new[1][4]*(wiw[0][0]+0.5*wiw_new[0][0]);
+          W[0][4][2] = wiw[0][0]*wiw[1][4]+0.5*wiw_new[0][0]*wiw[1][4]+0.5*wiw[0][0]*wiw_new[1][4]+wiw_new[0][0]*wiw_new[1][4]/3.;
+
+          W[1][0][0] = wiw_new[0][1]*(wiw[1][0]+0.5*wiw_new[1][0]);
+          W[1][0][1] = wiw_new[1][0]*(wiw[0][1]+0.5*wiw_new[0][1]);
+          W[1][0][2] = wiw[0][1]*wiw[1][0]+0.5*wiw_new[0][1]*wiw[1][0]+0.5*wiw[0][1]*wiw_new[1][0]+wiw_new[0][1]*wiw_new[1][0]/3.;
+
+          W[1][1][0] = wiw_new[0][1]*(wiw[1][1]+0.5*wiw_new[1][1]);
+          W[1][1][1] = wiw_new[1][1]*(wiw[0][1]+0.5*wiw_new[0][1]);
+          W[1][1][2] = wiw[0][1]*wiw[1][1]+0.5*wiw_new[0][1]*wiw[1][1]+0.5*wiw[0][1]*wiw_new[1][1]+wiw_new[0][1]*wiw_new[1][1]/3.;
+
+          W[1][2][0] = wiw_new[0][1]*(wiw[1][2]+0.5*wiw_new[1][2]);
+          W[1][2][1] = wiw_new[1][2]*(wiw[0][1]+0.5*wiw_new[0][1]);
+          W[1][2][2] = wiw[0][1]*wiw[1][2]+0.5*wiw_new[0][1]*wiw[1][2]+0.5*wiw[0][1]*wiw_new[1][2]+wiw_new[0][1]*wiw_new[1][2]/3.;
+
+          W[1][3][0] = wiw_new[0][1]*(wiw[1][3]+0.5*wiw_new[1][3]);
+          W[1][3][1] = wiw_new[1][3]*(wiw[0][1]+0.5*wiw_new[0][1]);
+          W[1][3][2] = wiw[0][1]*wiw[1][3]+0.5*wiw_new[0][1]*wiw[1][3]+0.5*wiw[0][1]*wiw_new[1][3]+wiw_new[0][1]*wiw_new[1][3]/3.;
+
+          W[1][4][0] = wiw_new[0][1]*(wiw[1][4]+0.5*wiw_new[1][4]);
+          W[1][4][1] = wiw_new[1][4]*(wiw[0][1]+0.5*wiw_new[0][1]);
+          W[1][4][2] = wiw[0][1]*wiw[1][4]+0.5*wiw_new[0][1]*wiw[1][4]+0.5*wiw[0][1]*wiw_new[1][4]+wiw_new[0][1]*wiw_new[1][4]/3.;
+
+          W[2][0][0] = wiw_new[0][2]*(wiw[1][0]+0.5*wiw_new[1][0]);
+          W[2][0][1] = wiw_new[1][0]*(wiw[0][2]+0.5*wiw_new[0][2]);
+          W[2][0][2] = wiw[0][2]*wiw[1][0]+0.5*wiw_new[0][2]*wiw[1][0]+0.5*wiw[0][2]*wiw_new[1][0]+wiw_new[0][2]*wiw_new[1][0]/3.;
+
+          W[2][1][0] = wiw_new[0][2]*(wiw[1][1]+0.5*wiw_new[1][1]);
+          W[2][1][1] = wiw_new[1][1]*(wiw[0][2]+0.5*wiw_new[0][2]);
+          W[2][1][2] = wiw[0][2]*wiw[1][1]+0.5*wiw_new[0][2]*wiw[1][1]+0.5*wiw[0][2]*wiw_new[1][1]+wiw_new[0][2]*wiw_new[1][1]/3.;
+
+          W[2][2][0] = wiw_new[0][2]*(wiw[1][2]+0.5*wiw_new[1][2]);
+          W[2][2][1] = wiw_new[1][2]*(wiw[0][2]+0.5*wiw_new[0][2]);
+          W[2][2][2] = wiw[0][2]*wiw[1][2]+0.5*wiw_new[0][2]*wiw[1][2]+0.5*wiw[0][2]*wiw_new[1][2]+wiw_new[0][2]*wiw_new[1][2]/3.;
+
+          W[2][3][0] = wiw_new[0][2]*(wiw[1][3]+0.5*wiw_new[1][3]);
+          W[2][3][1] = wiw_new[1][3]*(wiw[0][2]+0.5*wiw_new[0][2]);
+          W[2][3][2] = wiw[0][2]*wiw[1][3]+0.5*wiw_new[0][2]*wiw[1][3]+0.5*wiw[0][2]*wiw_new[1][3]+wiw_new[0][2]*wiw_new[1][3]/3.;
+
+          W[2][4][0] = wiw_new[0][2]*(wiw[1][4]+0.5*wiw_new[1][4]);
+          W[2][4][1] = wiw_new[1][4]*(wiw[0][2]+0.5*wiw_new[0][2]);
+          W[2][4][2] = wiw[0][2]*wiw[1][4]+0.5*wiw_new[0][2]*wiw[1][4]+0.5*wiw[0][2]*wiw_new[1][4]+wiw_new[0][2]*wiw_new[1][4]/3.;
+
+          W[3][0][0] = wiw_new[0][3]*(wiw[1][0]+0.5*wiw_new[1][0]);
+          W[3][0][1] = wiw_new[1][0]*(wiw[0][3]+0.5*wiw_new[0][3]);
+          W[3][0][2] = wiw[0][3]*wiw[1][0]+0.5*wiw_new[0][3]*wiw[1][0]+0.5*wiw[0][3]*wiw_new[1][0]+wiw_new[0][3]*wiw_new[1][0]/3.;
+
+          W[3][1][0] = wiw_new[0][3]*(wiw[1][1]+0.5*wiw_new[1][1]);
+          W[3][1][1] = wiw_new[1][1]*(wiw[0][3]+0.5*wiw_new[0][3]);
+          W[3][1][2] = wiw[0][3]*wiw[1][1]+0.5*wiw_new[0][3]*wiw[1][1]+0.5*wiw[0][3]*wiw_new[1][1]+wiw_new[0][3]*wiw_new[1][1]/3.;
+
+          W[3][2][0] = wiw_new[0][3]*(wiw[1][2]+0.5*wiw_new[1][2]);
+          W[3][2][1] = wiw_new[1][2]*(wiw[0][3]+0.5*wiw_new[0][3]);
+          W[3][2][2] = wiw[0][3]*wiw[1][2]+0.5*wiw_new[0][3]*wiw[1][2]+0.5*wiw[0][3]*wiw_new[1][2]+wiw_new[0][3]*wiw_new[1][2]/3.;
+
+          W[3][3][0] = wiw_new[0][3]*(wiw[1][3]+0.5*wiw_new[1][3]);
+          W[3][3][1] = wiw_new[1][3]*(wiw[0][3]+0.5*wiw_new[0][3]);
+          W[3][3][2] = wiw[0][3]*wiw[1][3]+0.5*wiw_new[0][3]*wiw[1][3]+0.5*wiw[0][3]*wiw_new[1][3]+wiw_new[0][3]*wiw_new[1][3]/3.;
+
+          W[3][4][0] = wiw_new[0][3]*(wiw[1][4]+0.5*wiw_new[1][4]);
+          W[3][4][1] = wiw_new[1][4]*(wiw[0][3]+0.5*wiw_new[0][3]);
+          W[3][4][2] = wiw[0][3]*wiw[1][4]+0.5*wiw_new[0][3]*wiw[1][4]+0.5*wiw[0][3]*wiw_new[1][4]+wiw_new[0][3]*wiw_new[1][4]/3.;
+
+          W[4][0][0] = wiw_new[0][4]*(wiw[1][0]+0.5*wiw_new[1][0]);
+          W[4][0][1] = wiw_new[1][0]*(wiw[0][4]+0.5*wiw_new[0][4]);
+          W[4][0][2] = wiw[0][4]*wiw[1][0]+0.5*wiw_new[0][4]*wiw[1][0]+0.5*wiw[0][4]*wiw_new[1][0]+wiw_new[0][4]*wiw_new[1][4]/3.;
+
+          W[4][1][0] = wiw_new[0][4]*(wiw[1][1]+0.5*wiw_new[1][1]);
+          W[4][1][1] = wiw_new[1][1]*(wiw[0][4]+0.5*wiw_new[0][4]);
+          W[4][1][2] = wiw[0][4]*wiw[1][1]+0.5*wiw_new[0][4]*wiw[1][1]+0.5*wiw[0][4]*wiw_new[1][1]+wiw_new[0][4]*wiw_new[1][1]/3.;
+
+          W[4][2][0] = wiw_new[0][4]*(wiw[1][2]+0.5*wiw_new[1][2]);
+          W[4][2][1] = wiw_new[1][2]*(wiw[0][4]+0.5*wiw_new[0][4]);
+          W[4][2][2] = wiw[0][4]*wiw[1][2]+0.5*wiw_new[0][4]*wiw[1][2]+0.5*wiw[0][4]*wiw_new[1][2]+wiw_new[0][4]*wiw_new[1][2]/3.;
+
+          W[4][3][0] = wiw_new[0][4]*(wiw[1][3]+0.5*wiw_new[1][3]);
+          W[4][3][1] = wiw_new[1][3]*(wiw[0][4]+0.5*wiw_new[0][4]);
+          W[4][3][2] = wiw[0][4]*wiw[1][3]+0.5*wiw_new[0][4]*wiw[1][3]+0.5*wiw[0][4]*wiw_new[1][3]+wiw_new[0][4]*wiw_new[1][3]/3.;
+
+          W[4][4][0] = wiw_new[0][4]*(wiw[1][4]+0.5*wiw_new[1][4]);
+          W[4][4][1] = wiw_new[1][4]*(wiw[0][4]+0.5*wiw_new[0][4]);
+          W[4][4][2] = wiw[0][4]*wiw[1][4]+0.5*wiw_new[0][4]*wiw[1][4]+0.5*wiw[0][4]*wiw_new[1][4]+wiw_new[0][4]*wiw_new[1][4]/3.;
+
+
+  /*      for(j=0; j<5; j++){
+            for(i=0; i<5; i++){
+                W[i][j][0] = wiw_new[0][i]*(wiw[1][j]+0.5*wiw_new[1][j]);
+                W[i][j][1] = wiw_new[1][j]*(wiw[0][i]+0.5*wiw_new[0][i]);
+                W[i][j][2] = wiw[0][i]*wiw[1][j]+0.5*wiw_new[0][i]*wiw[1][j]+0.5*wiw[0][i]*wiw_new[1][j]+wiw_new[0][i]*wiw_new[1][j]/3.;
+
+        }*/
+
+        double Jxloc[5][5], Jyloc[5][5], Jzloc[5][5]; // local current contribution of the quasi-particle
+      /*  std::memset(Jxloc,0,sizeof(Jxloc));
+      std::memset(Jyloc,0,sizeof(Jyloc));
+       std::memset(Jzloc,0,sizeof(Jzloc));    */
+
+
+       /* for (j = 0; j < 5; j++){
+            Jxloc[0][j] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[0][j][0];
+            Jzloc[0][j] = w(p) * chargeSign * vv[2] * W[0][j][2];
+        }*/
+
+          Jxloc[0][0] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[0][0][0];
+          Jzloc[0][0] = w(p) * chargeSign * vv[2] * W[0][0][2];
+
+          Jxloc[0][1] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[0][1][0];
+          Jzloc[0][1] = w(p) * chargeSign * vv[2] * W[0][1][2];
+
+          Jxloc[0][2] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[0][2][0];
+          Jzloc[0][2] = w(p) * chargeSign * vv[2] * W[0][2][2];
+
+          Jxloc[0][3] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[0][3][0];
+          Jzloc[0][3] = w(p) * chargeSign * vv[2] * W[0][3][2];
+
+          Jxloc[0][4] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[0][4][0];
+          Jzloc[0][4] = w(p) * chargeSign * vv[2] * W[0][4][2];
+
+
+    /*    for (i = 0; i < 5; i++){
+            Jyloc[i][0] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[i][0][1];
+            Jzloc[i][0] = w(p) * chargeSign * vv[2] * W[i][0][2];
+        }*/
+
+          Jyloc[0][0] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[0][0][1];
+          Jzloc[0][0] = w(p) * chargeSign * vv[2] * W[0][0][2];
+
+          Jyloc[1][0] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[1][0][1];
+          Jzloc[1][0] = w(p) * chargeSign * vv[2] * W[1][0][2];
+
+          Jyloc[2][0] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[2][0][1];
+          Jzloc[2][0] = w(p) * chargeSign * vv[2] * W[2][0][2];
+
+          Jyloc[3][0] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[3][0][1];
+          Jzloc[3][0] = w(p) * chargeSign * vv[2] * W[3][0][2];
+
+          Jyloc[4][0] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[4][0][1];
+          Jzloc[4][0] = w(p) * chargeSign * vv[2] * W[4][0][2];
+
+
+        /*for (j = 0; j < 5; j++)
+          {
+            for (i = 1; i < 5; i++)
+              {
+                Jxloc[i][j] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[i][j][0] + Jxloc[i-1][j];
+                Jzloc[i][j] = w(p) * chargeSign * vv[2] * W[i][j][2];
+              }
+          }*/
+
+          Jxloc[1][0] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[1][0][0] + Jxloc[0][0];
+          Jzloc[1][0] = w(p) * chargeSign * vv[2] * W[1][0][2];
+
+          Jxloc[2][0] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[2][0][0] + Jxloc[1][0];
+          Jzloc[2][0] = w(p) * chargeSign * vv[2] * W[2][0][2];
+
+          Jxloc[3][0] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[3][0][0] + Jxloc[2][0];
+          Jzloc[3][0] = w(p) * chargeSign * vv[2] * W[3][0][2];
+
+          Jxloc[4][0] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[4][0][0] + Jxloc[3][0];
+          Jzloc[4][0] = w(p) * chargeSign * vv[2] * W[4][0][2];
+
+          Jxloc[1][1] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[1][1][0] + Jxloc[0][1];
+          Jzloc[1][1] = w(p) * chargeSign * vv[2] * W[1][1][2];
+
+          Jxloc[2][1] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[2][1][0] + Jxloc[1][1];
+          Jzloc[2][1] = w(p) * chargeSign * vv[2] * W[2][1][2];
+
+          Jxloc[3][1] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[3][1][0] + Jxloc[2][1];
+          Jzloc[3][1] = w(p) * chargeSign * vv[2] * W[3][1][2];
+
+          Jxloc[4][1] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[4][1][0] + Jxloc[3][1];
+          Jzloc[4][1] = w(p) * chargeSign * vv[2] * W[4][1][2];
+
+          Jxloc[1][2] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[1][2][0] + Jxloc[0][2];
+          Jzloc[1][2] = w(p) * chargeSign * vv[2] * W[1][2][2];
+
+          Jxloc[2][2] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[2][2][0] + Jxloc[1][2];
+          Jzloc[2][2] = w(p) * chargeSign * vv[2] * W[2][2][2];
+
+          Jxloc[3][2] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[3][2][0] + Jxloc[2][2];
+          Jzloc[3][2] = w(p) * chargeSign * vv[2] * W[3][2][2];
+
+          Jxloc[4][2] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[4][2][0] + Jxloc[3][2];
+          Jzloc[4][2] = w(p) * chargeSign * vv[2] * W[4][2][2];
+
+          Jxloc[1][3] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[1][3][0] + Jxloc[0][3];
+          Jzloc[1][3] = w(p) * chargeSign * vv[2] * W[1][3][2];
+
+          Jxloc[2][3] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[2][3][0] + Jxloc[1][3];
+          Jzloc[2][3] = w(p) * chargeSign * vv[2] * W[2][3][2];
+
+          Jxloc[3][3] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[3][3][0] + Jxloc[2][3];
+          Jzloc[3][3] = w(p) * chargeSign * vv[2] * W[3][3][2];
+
+          Jxloc[4][3] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[4][3][0] + Jxloc[3][3];
+          Jzloc[4][3] = w(p) * chargeSign * vv[2] * W[4][3][2];
+
+          Jxloc[1][4] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[1][4][0] + Jxloc[0][4];
+          Jzloc[1][4] = w(p) * chargeSign * vv[2] * W[1][4][2];
+
+          Jxloc[2][4] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[2][4][0] + Jxloc[1][4];
+          Jzloc[2][4] = w(p) * chargeSign * vv[2] * W[2][4][2];
+
+          Jxloc[3][4] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[3][4][0] + Jxloc[2][4];
+          Jzloc[3][4] = w(p) * chargeSign * vv[2] * W[3][4][2];
+
+          Jxloc[4][4] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[4][4][0] + Jxloc[3][4];
+          Jzloc[4][4] = w(p) * chargeSign * vv[2] * W[4][4][2];
+
+        /*for (j = 1; j < 5; j++)
+          {
+            for (i = 0; i < 5; i++)
+              {
+                Jyloc[i][j] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[i][j][1] + Jyloc[i][j-1];
+                Jzloc[i][j] = w(p) * chargeSign * vv[2] * W[i][j][2];
+              }
+          }*/
+
+
+          Jyloc[0][1] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[0][1][1] + Jyloc[0][0];
+          Jzloc[0][1] = w(p) * chargeSign * vv[2] * W[0][1][2];
+
+          Jyloc[1][1] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[1][1][1] + Jyloc[1][0];
+          Jzloc[1][1] = w(p) * chargeSign * vv[2] * W[1][1][2];
+
+          Jyloc[2][1] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[2][1][1] + Jyloc[2][0];
+          Jzloc[2][1] = w(p) * chargeSign * vv[2] * W[2][1][2];
+
+          Jyloc[3][1] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[3][1][1] + Jyloc[3][0];
+          Jzloc[3][1] = w(p) * chargeSign * vv[2] * W[3][1][2];
+
+          Jyloc[4][1] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[4][1][1] + Jyloc[4][0];
+          Jzloc[4][1] = w(p) * chargeSign * vv[2] * W[4][1][2];
+
+          Jyloc[0][2] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[0][2][1] + Jyloc[0][1];
+          Jzloc[0][2] = w(p) * chargeSign * vv[2] * W[0][2][2];
+
+          Jyloc[1][2] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[1][2][1] + Jyloc[1][1];
+          Jzloc[1][2] = w(p) * chargeSign * vv[2] * W[1][2][2];
+
+          Jyloc[2][2] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[2][2][1] + Jyloc[2][1];
+          Jzloc[2][2] = w(p) * chargeSign * vv[2] * W[2][2][2];
+
+          Jyloc[3][2] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[3][2][1] + Jyloc[3][1];
+          Jzloc[3][2] = w(p) * chargeSign * vv[2] * W[3][2][2];
+
+          Jyloc[4][2] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[4][2][1] + Jyloc[4][1];
+          Jzloc[4][2] = w(p) * chargeSign * vv[2] * W[4][2][2];
+
+          Jyloc[0][3] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[0][3][1] + Jyloc[0][2];
+          Jzloc[0][3] = w(p) * chargeSign * vv[2] * W[0][3][2];
+
+          Jyloc[1][3] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[1][3][1] + Jyloc[1][2];
+          Jzloc[1][3] = w(p) * chargeSign * vv[2] * W[1][3][2];
+
+          Jyloc[2][3] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[2][3][1] + Jyloc[2][2];
+          Jzloc[2][3] = w(p) * chargeSign * vv[2] * W[2][3][2];
+
+          Jyloc[3][3] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[3][3][1] + Jyloc[3][2];
+          Jzloc[3][3] = w(p) * chargeSign * vv[2] * W[3][3][2];
+
+          Jyloc[4][3] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[4][3][1] + Jyloc[4][2];
+          Jzloc[4][3] = w(p) * chargeSign * vv[2] * W[4][3][2];
+
+          Jyloc[0][4] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[0][4][1] + Jyloc[0][3];
+          Jzloc[0][4] = w(p) * chargeSign * vv[2] * W[0][4][2];
+
+          Jyloc[1][4] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[1][4][1] + Jyloc[1][3];
+          Jzloc[1][4] = w(p) * chargeSign * vv[2] * W[1][4][2];
+
+          Jyloc[2][4] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[2][4][1] + Jyloc[2][3];
+          Jzloc[2][4] = w(p) * chargeSign * vv[2] * W[2][4][2];
+
+          Jyloc[3][4] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[3][4][1] + Jyloc[3][3];
+          Jzloc[3][4] = w(p) * chargeSign * vv[2] * W[3][4][2];
+
+          Jyloc[4][4] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[4][4][1] + Jyloc[4][3];
+          Jzloc[4][4] = w(p) * chargeSign * vv[2] * W[4][4][2];
+
+
+
+        // compute total current
+        //for (j = 0; j < 5; j++)
+
+          j1 = wii[1] - 2;
+          i1 = wii[0] - 2;
+          current->Jx(i1, j1, k1) += Jxloc[0][0];
+          current->Jy(i1, j1, k1) += Jyloc[0][0];
+          current->Jz(i1, j1, k1) += Jzloc[0][0];
+
+          i1 = wii[0] - 1;
+          current->Jx(i1, j1, k1) += Jxloc[1][0];
+          current->Jy(i1, j1, k1) += Jyloc[1][0];
+          current->Jz(i1, j1, k1) += Jzloc[1][0];
+
+          i1 = wii[0];
+          current->Jx(i1, j1, k1) += Jxloc[2][0];
+          current->Jy(i1, j1, k1) += Jyloc[2][0];
+          current->Jz(i1, j1, k1) += Jzloc[2][0];
+
+          i1 = 1 + wii[0];
+          current->Jx(i1, j1, k1) += Jxloc[3][0];
+          current->Jy(i1, j1, k1) += Jyloc[3][0];
+          current->Jz(i1, j1, k1) += Jzloc[3][0];
+
+          i1 = 2 + wii[0];
+          current->Jx(i1, j1, k1) += Jxloc[4][0];
+          current->Jy(i1, j1, k1) += Jyloc[4][0];
+          current->Jz(i1, j1, k1) += Jzloc[4][0];
+
+          j1 = wii[1] - 1;
+          i1 = wii[0] - 2;
+          current->Jx(i1, j1, k1) += Jxloc[0][1];
+          current->Jy(i1, j1, k1) += Jyloc[0][1];
+          current->Jz(i1, j1, k1) += Jzloc[0][1];
+
+          i1 = wii[0] - 1;
+          current->Jx(i1, j1, k1) += Jxloc[1][1];
+          current->Jy(i1, j1, k1) += Jyloc[1][1];
+          current->Jz(i1, j1, k1) += Jzloc[1][1];
+
+          i1 = wii[0];
+          current->Jx(i1, j1, k1) += Jxloc[2][1];
+          current->Jy(i1, j1, k1) += Jyloc[2][1];
+          current->Jz(i1, j1, k1) += Jzloc[2][1];
+
+          i1 = 1 + wii[0];
+          current->Jx(i1, j1, k1) += Jxloc[3][1];
+          current->Jy(i1, j1, k1) += Jyloc[3][1];
+          current->Jz(i1, j1, k1) += Jzloc[3][1];
+
+          i1 = 2 + wii[0];
+          current->Jx(i1, j1, k1) += Jxloc[4][1];
+          current->Jy(i1, j1, k1) += Jyloc[4][1];
+          current->Jz(i1, j1, k1) += Jzloc[4][1];
+
+          j1 = wii[1];
+          i1 = wii[0] - 2;
+          current->Jx(i1, j1, k1) += Jxloc[0][2];
+          current->Jy(i1, j1, k1) += Jyloc[0][2];
+          current->Jz(i1, j1, k1) += Jzloc[0][2];
+
+          i1 = wii[0] - 1;
+          current->Jx(i1, j1, k1) += Jxloc[1][2];
+          current->Jy(i1, j1, k1) += Jyloc[1][2];
+          current->Jz(i1, j1, k1) += Jzloc[1][2];
+
+          i1 = wii[0];
+          current->Jx(i1, j1, k1) += Jxloc[2][2];
+          current->Jy(i1, j1, k1) += Jyloc[2][2];
+          current->Jz(i1, j1, k1) += Jzloc[2][2];
+
+          i1 = 1 + wii[0];
+          current->Jx(i1, j1, k1) += Jxloc[3][2];
+          current->Jy(i1, j1, k1) += Jyloc[3][2];
+          current->Jz(i1, j1, k1) += Jzloc[3][2];
+
+          i1 = 2 + wii[0];
+          current->Jx(i1, j1, k1) += Jxloc[4][2];
+          current->Jy(i1, j1, k1) += Jyloc[4][2];
+          current->Jz(i1, j1, k1) += Jzloc[4][2];
+
+          j1 = 1 + wii[1];
+          i1 = wii[0] - 2;
+          current->Jx(i1, j1, k1) += Jxloc[0][3];
+          current->Jy(i1, j1, k1) += Jyloc[0][3];
+          current->Jz(i1, j1, k1) += Jzloc[0][3];
+
+          i1 = wii[0] - 1;
+          current->Jx(i1, j1, k1) += Jxloc[1][3];
+          current->Jy(i1, j1, k1) += Jyloc[1][3];
+          current->Jz(i1, j1, k1) += Jzloc[1][3];
+
+          i1 = wii[0];
+          current->Jx(i1, j1, k1) += Jxloc[2][3];
+          current->Jy(i1, j1, k1) += Jyloc[2][3];
+          current->Jz(i1, j1, k1) += Jzloc[2][3];
+
+          i1 = 1 + wii[0];
+          current->Jx(i1, j1, k1) += Jxloc[3][3];
+          current->Jy(i1, j1, k1) += Jyloc[3][3];
+          current->Jz(i1, j1, k1) += Jzloc[3][3];
+
+          i1 = 2 + wii[0];
+          current->Jx(i1, j1, k1) += Jxloc[4][3];
+          current->Jy(i1, j1, k1) += Jyloc[4][3];
+          current->Jz(i1, j1, k1) += Jzloc[4][3];
+
+          j1 = 2 + wii[1];
+          i1 = wii[0] - 2;
+          current->Jx(i1, j1, k1) += Jxloc[0][4];
+          current->Jy(i1, j1, k1) += Jyloc[0][4];
+          current->Jz(i1, j1, k1) += Jzloc[0][4];
+
+          i1 = wii[0] - 1;
+          current->Jx(i1, j1, k1) += Jxloc[1][4];
+          current->Jy(i1, j1, k1) += Jyloc[1][4];
+          current->Jz(i1, j1, k1) += Jzloc[1][4];
+
+          i1 = wii[0];
+          current->Jx(i1, j1, k1) += Jxloc[2][4];
+          current->Jy(i1, j1, k1) += Jyloc[2][4];
+          current->Jz(i1, j1, k1) += Jzloc[2][4];
+
+          i1 = 1 + wii[0];
+          current->Jx(i1, j1, k1) += Jxloc[3][4];
+          current->Jy(i1, j1, k1) += Jyloc[3][4];
+          current->Jz(i1, j1, k1) += Jzloc[3][4];
+
+          i1 = 2 + wii[0];
+          current->Jx(i1, j1, k1) += Jxloc[4][4];
+          current->Jy(i1, j1, k1) += Jyloc[4][4];
+          current->Jz(i1, j1, k1) += Jzloc[4][4];
+
+
+
       }
+      break;
 
-    }
-    break;
 
   case 1:
     for (p = 0; p < Np; p++)

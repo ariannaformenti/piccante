@@ -19,7 +19,7 @@ MAIN = $(addprefix $(SRC_FOLDER)/, $(MAINFILE))
 OBJ = $(addprefix $(OBJ_FOLDER)/, $(addsuffix .o, $(basename $(FILES))))
 OBJ += $(addprefix $(OBJ_FOLDER)/, $(addsuffix .o, $(basename $(MAINFILE))))
 LIB =
-OPT = -O3 -std=c++11
+OPT = -pg -O3 -mavx -msse -msse2 -msse3 -march=native -mtune=native -std=c++11
 
 BOOST_LIB = $(SRC_FOLDER)
 BOOST_INC = $(SRC_FOLDER)
