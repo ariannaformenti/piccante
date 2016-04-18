@@ -2979,18 +2979,18 @@ void SPECIE::current_deposition_esirkepov(CURRENT *current)
   int edge = mygrid->getEdge();
   if (!(mygrid->withCurrent == YES && (!isTestSpecies)))
   {
-    for (p = 0; p < Np; p++)
+    for (p = 0; p < Np; p++) // DEVO METTERE IFDEF _ACC_SINGLE_POINTER ??
     {
       double ux, uy, uz;
-      ux = ru(3,p);
-      uy = ru(4,p);
-      uz = ru(5,p);
+      ux = pData[pIndex(3, p, Ncomp, Np)];
+      uy = pData[pIndex(4, p, Ncomp, Np)];
+      uz = pData[pIndex(5, p, Ncomp, Np)];
       gamma_i = 1. / sqrt(1 + ux*ux + uy*uy + uz*uz);
 
       for (c = 0; c < mygrid->getDimensionality(); c++)
       {
-          vv[c] = gamma_i*ru(c+3,p);
-          ru(c,p) += dt*vv[c];
+          vv[c] = gamma_i*pData[pIndex(c + 3, p, Ncomp, Np)];
+          pData[pIndex(c, p, Ncomp, Np)] += dt*vv[c];
       }
     }
     return;
@@ -3338,16 +3338,16 @@ void SPECIE::current_deposition_esirkepov(CURRENT *current)
       for (p = 0; p < Np; p++)
       {
         double ux, uy, uz;
-        ux = ru(3,p);
-        uy = ru(4,p);
-        uz = ru(5,p);
+        ux = pData[pIndex(3, p, Ncomp, Np)];
+        uy = pData[pIndex(4, p, Ncomp, Np)];
+        uz = pData[pIndex(5, p, Ncomp, Np)];
 
 
         gamma_i = 1. / sqrt(1 + ux*ux + uy*uy + uz*uz);
 
         for (c = 0; c < 3; c++)
         {
-          vv[c] = gamma_i*ru(c + 3, p);
+          vv[c] = gamma_i*pData[pIndex(c + 3, p, Ncomp, Np)];
         }
 
           wiw[0][0] = wiw_new[0][0] = 0.0;
@@ -3367,74 +3367,9 @@ void SPECIE::current_deposition_esirkepov(CURRENT *current)
           wiw[2][4] = wiw_new[2][4] = 0.0;
 
 
-
-        //std::memset(wiw,0,sizeof(wiw));
-          //std::memset(wiw_new,0,sizeof(wiw_new));
-
-        /*for (c = 0; c < 2; c++)
-        {
-          rr = mygrid->dri[c] * (ru(c,p) - mygrid->rminloc[c]);
-
-          wii[c] = (int)floor(rr + 0.5); //whole integer int
-          rr -= wii[c];
-          rr2 = rr*rr;
-
-          // form-factors at time step n
-          //wiw[c][0] = 0;
-          wiw[c][1] = 0.5*(0.25 + rr2 - rr);
-          wiw[c][2] = 0.75 - rr2;
-          wiw[c][3] = 1. - wiw[c][1] - wiw[c][2];
-          //wiw[c][4] = 0;
-
-          ru(c, p) += dt*vv[c]; // advance the quasi-particle
-
-          rr = mygrid->dri[c] * (ru(c,p) - mygrid->rminloc[c]);
-
-          // form-factors at time step n+1
-          wii_new[c] = (int)floor(rr + 0.5); //whole integer int
-          rr -= wii_new[c];
-          rr2 = rr*rr;
-
-
-          switch (wii_new[c]-wii[c])
-          {
-          case -1: // the quasi-particle moved backwards
-              wiw_new[c][0] = 0.5*(0.25 + rr2 - rr);
-              wiw_new[c][1] = 0.75 - rr2;
-              wiw_new[c][2] = 1. - wiw_new[c][0] - wiw_new[c][1];
-              //wiw_new[c][3] = 0.;
-              //wiw_new[c][4] = 0.;
-              break;
-          case  0: // nearest node hasn't changed
-              //wiw_new[c][0] = 0.;
-              wiw_new[c][1] = 0.5*(0.25 + rr2 - rr);
-              wiw_new[c][2] = 0.75 - rr2;
-              wiw_new[c][3] = 1. - wiw_new[c][1] - wiw_new[c][2];
-              //wiw_new[c][4] = 0;
-              break;
-
-          case 1: // the quasi-particle moved forward
-              //wiw_new[c][0] = 0.;
-              //wiw_new[c][1] = 0.;
-              wiw_new[c][2] = 0.5*(0.25 + rr2 - rr);
-              wiw_new[c][3] = 0.75 - rr2;
-              wiw_new[c][4] = 1. - wiw_new[c][2] - wiw_new[c][3];
-              break;
-          }
-
-        // difference of new and old form-factors
-        wiw_new[c][0] -= wiw[c][0];
-        wiw_new[c][1] -= wiw[c][1];
-        wiw_new[c][2] -= wiw[c][2];
-        wiw_new[c][3] -= wiw[c][3];
-        wiw_new[c][4] -= wiw[c][4];
-
-        }*/
-
-
           // c = 0
 
-          rr = mygrid->dri[0] * (ru(0,p) - mygrid->rminloc[0]);
+          rr = mygrid->dri[0] * (pData[pIndex(0, p, Ncomp, Np)]- mygrid->rminloc[0]);
 
           wii[0] = (int)floor(rr + 0.5); //whole integer int
           rr -= wii[0];
@@ -3447,9 +3382,9 @@ void SPECIE::current_deposition_esirkepov(CURRENT *current)
           wiw[0][3] = 0.5*(0.25 + rr2 + rr);
           //wiw[c][4] = 0;
 
-          ru(0, p) += dt*vv[0]; // advance the quasi-particle
+          pData[pIndex(0, p, Ncomp, Np)] += dt*vv[0]; // advance the quasi-particle
 
-          rr = mygrid->dri[0] * (ru(0,p) - mygrid->rminloc[0]);
+          rr = mygrid->dri[0] * (pData[pIndex(0, p, Ncomp, Np)] - mygrid->rminloc[0]);
 
           // form-factors at time step n+1
           wii_new[0] = (int)floor(rr + 0.5); //whole integer int
@@ -3483,17 +3418,10 @@ void SPECIE::current_deposition_esirkepov(CURRENT *current)
               break;
           }
 
-        // difference of new and old form-factors
-        /*wiw_new[0][0] -= wiw[0][0];
-        wiw_new[0][1] -= wiw[0][1];
-        wiw_new[0][2] -= wiw[0][2];
-        wiw_new[0][3] -= wiw[0][3];
-        wiw_new[0][4] -= wiw[0][4];*/
-
 
   // c = 1
 
-          rr = mygrid->dri[1] * (ru(1,p) - mygrid->rminloc[1]);
+          rr = mygrid->dri[1] * (pData[pIndex(1, p, Ncomp, Np)] - mygrid->rminloc[1]);
 
           wii[1] = (int)floor(rr + 0.5); //whole integer int
           rr -= wii[1];
@@ -3506,9 +3434,9 @@ void SPECIE::current_deposition_esirkepov(CURRENT *current)
           wiw[1][3] = 0.5*(0.25 + rr2 + rr);
           //wiw[c][4] = 0;
 
-          ru(1, p) += dt*vv[1]; // advance the quasi-particle
+          pData[pIndex(1, p, Ncomp, Np)] += dt*vv[1]; // advance the quasi-particle
 
-          rr = mygrid->dri[1] * (ru(1,p) - mygrid->rminloc[1]);
+          rr = mygrid->dri[1] * (pData[pIndex(1, p, Ncomp, Np)]- mygrid->rminloc[1]);
 
           // form-factors at time step n+1
           wii_new[1] = (int)floor(rr + 0.5); //whole integer int
@@ -3541,13 +3469,6 @@ void SPECIE::current_deposition_esirkepov(CURRENT *current)
               wiw_new[1][4] = 0.5*(0.25 + rr2 + rr) - wiw[1][4];
               break;
           }
-
-        // difference of new and old form-factors
-       /* wiw_new[1][0] -= wiw[1][0];
-        wiw_new[1][1] -= wiw[1][1];
-        wiw_new[1][2] -= wiw[1][2];
-        wiw_new[1][3] -= wiw[1][3];
-        wiw_new[1][4] -= wiw[1][4];*/
 
 
   // -------------------------------------
@@ -3674,20 +3595,20 @@ void SPECIE::current_deposition_esirkepov(CURRENT *current)
             Jzloc[0][j] = w(p) * chargeSign * vv[2] * W[0][j][2];
         }*/
 
-          Jxloc[0][0] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[0][0][0];
-          Jzloc[0][0] = w(p) * chargeSign * vv[2] * W[0][0][2];
+          Jxloc[0][0] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[0] / dt * W[0][0][0];
+          Jzloc[0][0] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[0][0][2];
 
-          Jxloc[0][1] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[0][1][0];
-          Jzloc[0][1] = w(p) * chargeSign * vv[2] * W[0][1][2];
+          Jxloc[0][1] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[0] / dt * W[0][1][0];
+          Jzloc[0][1] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[0][1][2];
 
-          Jxloc[0][2] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[0][2][0];
-          Jzloc[0][2] = w(p) * chargeSign * vv[2] * W[0][2][2];
+          Jxloc[0][2] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[0] / dt * W[0][2][0];
+          Jzloc[0][2] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[0][2][2];
 
-          Jxloc[0][3] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[0][3][0];
-          Jzloc[0][3] = w(p) * chargeSign * vv[2] * W[0][3][2];
+          Jxloc[0][3] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[0] / dt * W[0][3][0];
+          Jzloc[0][3] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[0][3][2];
 
-          Jxloc[0][4] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[0][4][0];
-          Jzloc[0][4] = w(p) * chargeSign * vv[2] * W[0][4][2];
+          Jxloc[0][4] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[0] / dt * W[0][4][0];
+          Jzloc[0][4] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[0][4][2];
 
 
     /*    for (i = 0; i < 5; i++){
@@ -3695,20 +3616,20 @@ void SPECIE::current_deposition_esirkepov(CURRENT *current)
             Jzloc[i][0] = w(p) * chargeSign * vv[2] * W[i][0][2];
         }*/
 
-          Jyloc[0][0] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[0][0][1];
-          Jzloc[0][0] = w(p) * chargeSign * vv[2] * W[0][0][2];
+          Jyloc[0][0] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[1] / dt * W[0][0][1];
+          Jzloc[0][0] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[0][0][2];
 
-          Jyloc[1][0] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[1][0][1];
-          Jzloc[1][0] = w(p) * chargeSign * vv[2] * W[1][0][2];
+          Jyloc[1][0] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[1] / dt * W[1][0][1];
+          Jzloc[1][0] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[1][0][2];
 
-          Jyloc[2][0] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[2][0][1];
-          Jzloc[2][0] = w(p) * chargeSign * vv[2] * W[2][0][2];
+          Jyloc[2][0] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[1] / dt * W[2][0][1];
+          Jzloc[2][0] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[2][0][2];
 
-          Jyloc[3][0] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[3][0][1];
-          Jzloc[3][0] = w(p) * chargeSign * vv[2] * W[3][0][2];
+          Jyloc[3][0] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[1] / dt * W[3][0][1];
+          Jzloc[3][0] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[3][0][2];
 
-          Jyloc[4][0] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[4][0][1];
-          Jzloc[4][0] = w(p) * chargeSign * vv[2] * W[4][0][2];
+          Jyloc[4][0] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[1] / dt * W[4][0][1];
+          Jzloc[4][0] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[4][0][2];
 
 
         /*for (j = 0; j < 5; j++)
@@ -3720,65 +3641,65 @@ void SPECIE::current_deposition_esirkepov(CURRENT *current)
               }
           }*/
 
-          Jxloc[1][0] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[1][0][0] + Jxloc[0][0];
-          Jzloc[1][0] = w(p) * chargeSign * vv[2] * W[1][0][2];
+          Jxloc[1][0] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[0] / dt * W[1][0][0] + Jxloc[0][0];
+          Jzloc[1][0] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[1][0][2];
 
-          Jxloc[2][0] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[2][0][0] + Jxloc[1][0];
-          Jzloc[2][0] = w(p) * chargeSign * vv[2] * W[2][0][2];
+          Jxloc[2][0] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[0] / dt * W[2][0][0] + Jxloc[1][0];
+          Jzloc[2][0] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[2][0][2];
 
-          Jxloc[3][0] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[3][0][0] + Jxloc[2][0];
-          Jzloc[3][0] = w(p) * chargeSign * vv[2] * W[3][0][2];
+          Jxloc[3][0] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[0] / dt * W[3][0][0] + Jxloc[2][0];
+          Jzloc[3][0] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[3][0][2];
 
-          Jxloc[4][0] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[4][0][0] + Jxloc[3][0];
-          Jzloc[4][0] = w(p) * chargeSign * vv[2] * W[4][0][2];
+          Jxloc[4][0] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[0] / dt * W[4][0][0] + Jxloc[3][0];
+          Jzloc[4][0] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[4][0][2];
 
-          Jxloc[1][1] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[1][1][0] + Jxloc[0][1];
-          Jzloc[1][1] = w(p) * chargeSign * vv[2] * W[1][1][2];
+          Jxloc[1][1] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[0] / dt * W[1][1][0] + Jxloc[0][1];
+          Jzloc[1][1] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[1][1][2];
 
-          Jxloc[2][1] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[2][1][0] + Jxloc[1][1];
-          Jzloc[2][1] = w(p) * chargeSign * vv[2] * W[2][1][2];
+          Jxloc[2][1] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[0] / dt * W[2][1][0] + Jxloc[1][1];
+          Jzloc[2][1] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[2][1][2];
 
-          Jxloc[3][1] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[3][1][0] + Jxloc[2][1];
-          Jzloc[3][1] = w(p) * chargeSign * vv[2] * W[3][1][2];
+          Jxloc[3][1] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[0] / dt * W[3][1][0] + Jxloc[2][1];
+          Jzloc[3][1] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[3][1][2];
 
-          Jxloc[4][1] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[4][1][0] + Jxloc[3][1];
-          Jzloc[4][1] = w(p) * chargeSign * vv[2] * W[4][1][2];
+          Jxloc[4][1] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[0] / dt * W[4][1][0] + Jxloc[3][1];
+          Jzloc[4][1] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[4][1][2];
 
-          Jxloc[1][2] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[1][2][0] + Jxloc[0][2];
-          Jzloc[1][2] = w(p) * chargeSign * vv[2] * W[1][2][2];
+          Jxloc[1][2] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[0] / dt * W[1][2][0] + Jxloc[0][2];
+          Jzloc[1][2] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[1][2][2];
 
-          Jxloc[2][2] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[2][2][0] + Jxloc[1][2];
-          Jzloc[2][2] = w(p) * chargeSign * vv[2] * W[2][2][2];
+          Jxloc[2][2] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[0] / dt * W[2][2][0] + Jxloc[1][2];
+          Jzloc[2][2] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[2][2][2];
 
-          Jxloc[3][2] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[3][2][0] + Jxloc[2][2];
-          Jzloc[3][2] = w(p) * chargeSign * vv[2] * W[3][2][2];
+          Jxloc[3][2] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[0] / dt * W[3][2][0] + Jxloc[2][2];
+          Jzloc[3][2] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[3][2][2];
 
-          Jxloc[4][2] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[4][2][0] + Jxloc[3][2];
-          Jzloc[4][2] = w(p) * chargeSign * vv[2] * W[4][2][2];
+          Jxloc[4][2] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[0] / dt * W[4][2][0] + Jxloc[3][2];
+          Jzloc[4][2] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[4][2][2];
 
-          Jxloc[1][3] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[1][3][0] + Jxloc[0][3];
-          Jzloc[1][3] = w(p) * chargeSign * vv[2] * W[1][3][2];
+          Jxloc[1][3] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[0] / dt * W[1][3][0] + Jxloc[0][3];
+          Jzloc[1][3] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[1][3][2];
 
-          Jxloc[2][3] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[2][3][0] + Jxloc[1][3];
-          Jzloc[2][3] = w(p) * chargeSign * vv[2] * W[2][3][2];
+          Jxloc[2][3] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[0] / dt * W[2][3][0] + Jxloc[1][3];
+          Jzloc[2][3] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[2][3][2];
 
-          Jxloc[3][3] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[3][3][0] + Jxloc[2][3];
-          Jzloc[3][3] = w(p) * chargeSign * vv[2] * W[3][3][2];
+          Jxloc[3][3] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[0] / dt * W[3][3][0] + Jxloc[2][3];
+          Jzloc[3][3] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[3][3][2];
 
-          Jxloc[4][3] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[4][3][0] + Jxloc[3][3];
-          Jzloc[4][3] = w(p) * chargeSign * vv[2] * W[4][3][2];
+          Jxloc[4][3] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[0] / dt * W[4][3][0] + Jxloc[3][3];
+          Jzloc[4][3] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[4][3][2];
 
-          Jxloc[1][4] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[1][4][0] + Jxloc[0][4];
-          Jzloc[1][4] = w(p) * chargeSign * vv[2] * W[1][4][2];
+          Jxloc[1][4] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[0] / dt * W[1][4][0] + Jxloc[0][4];
+          Jzloc[1][4] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[1][4][2];
 
-          Jxloc[2][4] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[2][4][0] + Jxloc[1][4];
-          Jzloc[2][4] = w(p) * chargeSign * vv[2] * W[2][4][2];
+          Jxloc[2][4] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[0] / dt * W[2][4][0] + Jxloc[1][4];
+          Jzloc[2][4] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[2][4][2];
 
-          Jxloc[3][4] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[3][4][0] + Jxloc[2][4];
-          Jzloc[3][4] = w(p) * chargeSign * vv[2] * W[3][4][2];
+          Jxloc[3][4] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[0] / dt * W[3][4][0] + Jxloc[2][4];
+          Jzloc[3][4] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[3][4][2];
 
-          Jxloc[4][4] = - w(p) * chargeSign * mygrid->dr[0] / dt * W[4][4][0] + Jxloc[3][4];
-          Jzloc[4][4] = w(p) * chargeSign * vv[2] * W[4][4][2];
+          Jxloc[4][4] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[0] / dt * W[4][4][0] + Jxloc[3][4];
+          Jzloc[4][4] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[4][4][2];
 
         /*for (j = 1; j < 5; j++)
           {
@@ -3790,200 +3711,201 @@ void SPECIE::current_deposition_esirkepov(CURRENT *current)
           }*/
 
 
-          Jyloc[0][1] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[0][1][1] + Jyloc[0][0];
-          Jzloc[0][1] = w(p) * chargeSign * vv[2] * W[0][1][2];
+          Jyloc[0][1] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[1] / dt * W[0][1][1] + Jyloc[0][0];
+          Jzloc[0][1] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[0][1][2];
 
-          Jyloc[1][1] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[1][1][1] + Jyloc[1][0];
-          Jzloc[1][1] = w(p) * chargeSign * vv[2] * W[1][1][2];
+          Jyloc[1][1] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[1] / dt * W[1][1][1] + Jyloc[1][0];
+          Jzloc[1][1] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[1][1][2];
 
-          Jyloc[2][1] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[2][1][1] + Jyloc[2][0];
-          Jzloc[2][1] = w(p) * chargeSign * vv[2] * W[2][1][2];
+          Jyloc[2][1] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[1] / dt * W[2][1][1] + Jyloc[2][0];
+          Jzloc[2][1] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[2][1][2];
 
-          Jyloc[3][1] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[3][1][1] + Jyloc[3][0];
-          Jzloc[3][1] = w(p) * chargeSign * vv[2] * W[3][1][2];
+          Jyloc[3][1] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[1] / dt * W[3][1][1] + Jyloc[3][0];
+          Jzloc[3][1] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[3][1][2];
 
-          Jyloc[4][1] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[4][1][1] + Jyloc[4][0];
-          Jzloc[4][1] = w(p) * chargeSign * vv[2] * W[4][1][2];
+          Jyloc[4][1] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[1] / dt * W[4][1][1] + Jyloc[4][0];
+          Jzloc[4][1] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[4][1][2];
 
-          Jyloc[0][2] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[0][2][1] + Jyloc[0][1];
-          Jzloc[0][2] = w(p) * chargeSign * vv[2] * W[0][2][2];
+          Jyloc[0][2] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[1] / dt * W[0][2][1] + Jyloc[0][1];
+          Jzloc[0][2] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[0][2][2];
 
-          Jyloc[1][2] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[1][2][1] + Jyloc[1][1];
-          Jzloc[1][2] = w(p) * chargeSign * vv[2] * W[1][2][2];
+          Jyloc[1][2] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[1] / dt * W[1][2][1] + Jyloc[1][1];
+          Jzloc[1][2] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[1][2][2];
 
-          Jyloc[2][2] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[2][2][1] + Jyloc[2][1];
-          Jzloc[2][2] = w(p) * chargeSign * vv[2] * W[2][2][2];
+          Jyloc[2][2] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[1] / dt * W[2][2][1] + Jyloc[2][1];
+          Jzloc[2][2] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[2][2][2];
 
-          Jyloc[3][2] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[3][2][1] + Jyloc[3][1];
-          Jzloc[3][2] = w(p) * chargeSign * vv[2] * W[3][2][2];
+          Jyloc[3][2] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[1] / dt * W[3][2][1] + Jyloc[3][1];
+          Jzloc[3][2] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[3][2][2];
 
-          Jyloc[4][2] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[4][2][1] + Jyloc[4][1];
-          Jzloc[4][2] = w(p) * chargeSign * vv[2] * W[4][2][2];
+          Jyloc[4][2] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[1] / dt * W[4][2][1] + Jyloc[4][1];
+          Jzloc[4][2] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[4][2][2];
 
-          Jyloc[0][3] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[0][3][1] + Jyloc[0][2];
-          Jzloc[0][3] = w(p) * chargeSign * vv[2] * W[0][3][2];
+          Jyloc[0][3] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[1] / dt * W[0][3][1] + Jyloc[0][2];
+          Jzloc[0][3] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[0][3][2];
 
-          Jyloc[1][3] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[1][3][1] + Jyloc[1][2];
-          Jzloc[1][3] = w(p) * chargeSign * vv[2] * W[1][3][2];
+          Jyloc[1][3] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[1] / dt * W[1][3][1] + Jyloc[1][2];
+          Jzloc[1][3] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[1][3][2];
 
-          Jyloc[2][3] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[2][3][1] + Jyloc[2][2];
-          Jzloc[2][3] = w(p) * chargeSign * vv[2] * W[2][3][2];
+          Jyloc[2][3] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[1] / dt * W[2][3][1] + Jyloc[2][2];
+          Jzloc[2][3] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[2][3][2];
 
-          Jyloc[3][3] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[3][3][1] + Jyloc[3][2];
-          Jzloc[3][3] = w(p) * chargeSign * vv[2] * W[3][3][2];
+          Jyloc[3][3] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[1] / dt * W[3][3][1] + Jyloc[3][2];
+          Jzloc[3][3] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[3][3][2];
 
-          Jyloc[4][3] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[4][3][1] + Jyloc[4][2];
-          Jzloc[4][3] = w(p) * chargeSign * vv[2] * W[4][3][2];
+          Jyloc[4][3] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[1] / dt * W[4][3][1] + Jyloc[4][2];
+          Jzloc[4][3] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[4][3][2];
 
-          Jyloc[0][4] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[0][4][1] + Jyloc[0][3];
-          Jzloc[0][4] = w(p) * chargeSign * vv[2] * W[0][4][2];
+          Jyloc[0][4] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[1] / dt * W[0][4][1] + Jyloc[0][3];
+          Jzloc[0][4] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[0][4][2];
 
-          Jyloc[1][4] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[1][4][1] + Jyloc[1][3];
-          Jzloc[1][4] = w(p) * chargeSign * vv[2] * W[1][4][2];
+          Jyloc[1][4] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[1] / dt * W[1][4][1] + Jyloc[1][3];
+          Jzloc[1][4] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[1][4][2];
 
-          Jyloc[2][4] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[2][4][1] + Jyloc[2][3];
-          Jzloc[2][4] = w(p) * chargeSign * vv[2] * W[2][4][2];
+          Jyloc[2][4] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[1] / dt * W[2][4][1] + Jyloc[2][3];
+          Jzloc[2][4] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[2][4][2];
 
-          Jyloc[3][4] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[3][4][1] + Jyloc[3][3];
-          Jzloc[3][4] = w(p) * chargeSign * vv[2] * W[3][4][2];
+          Jyloc[3][4] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[1] / dt * W[3][4][1] + Jyloc[3][3];
+          Jzloc[3][4] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[3][4][2];
 
-          Jyloc[4][4] = - w(p) * chargeSign * mygrid->dr[1] / dt * W[4][4][1] + Jyloc[4][3];
-          Jzloc[4][4] = w(p) * chargeSign * vv[2] * W[4][4][2];
+          Jyloc[4][4] = - pData[pIndex(6, p, Ncomp, Np)] * chargeSign * mygrid->dr[1] / dt * W[4][4][1] + Jyloc[4][3];
+          Jzloc[4][4] = pData[pIndex(6, p, Ncomp, Np)] * chargeSign * vv[2] * W[4][4][2];
 
 
 
         // compute total current
         //for (j = 0; j < 5; j++)
 
+
           j1 = wii[1] - 2;
           i1 = wii[0] - 2;
-          current->Jx(i1, j1, k1) += Jxloc[0][0];
-          current->Jy(i1, j1, k1) += Jyloc[0][0];
-          current->Jz(i1, j1, k1) += Jzloc[0][0];
+          myCurrent[my_indice(edge, 1, 0, 0, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jxloc[0][0];
+          myCurrent[my_indice(edge, 1, 0, 1, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jyloc[0][0];
+          myCurrent[my_indice(edge, 1, 0, 2, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)]+= Jzloc[0][0];
 
           i1 = wii[0] - 1;
-          current->Jx(i1, j1, k1) += Jxloc[1][0];
-          current->Jy(i1, j1, k1) += Jyloc[1][0];
-          current->Jz(i1, j1, k1) += Jzloc[1][0];
+          myCurrent[my_indice(edge, 1, 0, 0, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)]  += Jxloc[1][0];
+          myCurrent[my_indice(edge, 1, 0, 1, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jyloc[1][0];
+          myCurrent[my_indice(edge, 1, 0, 2, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jzloc[1][0];
 
           i1 = wii[0];
-          current->Jx(i1, j1, k1) += Jxloc[2][0];
-          current->Jy(i1, j1, k1) += Jyloc[2][0];
-          current->Jz(i1, j1, k1) += Jzloc[2][0];
+          myCurrent[my_indice(edge, 1, 0, 0, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jxloc[2][0];
+          myCurrent[my_indice(edge, 1, 0, 1, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)]  += Jyloc[2][0];
+          myCurrent[my_indice(edge, 1, 0, 2, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jzloc[2][0];
 
           i1 = 1 + wii[0];
-          current->Jx(i1, j1, k1) += Jxloc[3][0];
-          current->Jy(i1, j1, k1) += Jyloc[3][0];
-          current->Jz(i1, j1, k1) += Jzloc[3][0];
+          myCurrent[my_indice(edge, 1, 0, 0, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jxloc[3][0];
+          myCurrent[my_indice(edge, 1, 0, 1, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)]  += Jyloc[3][0];
+          myCurrent[my_indice(edge, 1, 0, 2, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)]+= Jzloc[3][0];
 
           i1 = 2 + wii[0];
-          current->Jx(i1, j1, k1) += Jxloc[4][0];
-          current->Jy(i1, j1, k1) += Jyloc[4][0];
-          current->Jz(i1, j1, k1) += Jzloc[4][0];
+          myCurrent[my_indice(edge, 1, 0, 0, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jxloc[4][0];
+          myCurrent[my_indice(edge, 1, 0, 1, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jyloc[4][0];
+          myCurrent[my_indice(edge, 1, 0, 2, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jzloc[4][0];
 
           j1 = wii[1] - 1;
           i1 = wii[0] - 2;
-          current->Jx(i1, j1, k1) += Jxloc[0][1];
-          current->Jy(i1, j1, k1) += Jyloc[0][1];
-          current->Jz(i1, j1, k1) += Jzloc[0][1];
+          myCurrent[my_indice(edge, 1, 0, 0, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jxloc[0][1];
+          myCurrent[my_indice(edge, 1, 0, 1, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)]  += Jyloc[0][1];
+          myCurrent[my_indice(edge, 1, 0, 2, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jzloc[0][1];
 
           i1 = wii[0] - 1;
-          current->Jx(i1, j1, k1) += Jxloc[1][1];
-          current->Jy(i1, j1, k1) += Jyloc[1][1];
-          current->Jz(i1, j1, k1) += Jzloc[1][1];
+          myCurrent[my_indice(edge, 1, 0, 0, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jxloc[1][1];
+          myCurrent[my_indice(edge, 1, 0, 1, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)]  += Jyloc[1][1];
+          myCurrent[my_indice(edge, 1, 0, 2, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jzloc[1][1];
 
           i1 = wii[0];
-          current->Jx(i1, j1, k1) += Jxloc[2][1];
-          current->Jy(i1, j1, k1) += Jyloc[2][1];
-          current->Jz(i1, j1, k1) += Jzloc[2][1];
+          myCurrent[my_indice(edge, 1, 0, 0, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jxloc[2][1];
+          myCurrent[my_indice(edge, 1, 0, 1, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)]  += Jyloc[2][1];
+          myCurrent[my_indice(edge, 1, 0, 2, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jzloc[2][1];
 
           i1 = 1 + wii[0];
-          current->Jx(i1, j1, k1) += Jxloc[3][1];
-          current->Jy(i1, j1, k1) += Jyloc[3][1];
-          current->Jz(i1, j1, k1) += Jzloc[3][1];
+          myCurrent[my_indice(edge, 1, 0, 0, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jxloc[3][1];
+          myCurrent[my_indice(edge, 1, 0, 1, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jyloc[3][1];
+          myCurrent[my_indice(edge, 1, 0, 2, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jzloc[3][1];
 
           i1 = 2 + wii[0];
-          current->Jx(i1, j1, k1) += Jxloc[4][1];
-          current->Jy(i1, j1, k1) += Jyloc[4][1];
-          current->Jz(i1, j1, k1) += Jzloc[4][1];
+          myCurrent[my_indice(edge, 1, 0, 0, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jxloc[4][1];
+          myCurrent[my_indice(edge, 1, 0, 1, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jyloc[4][1];
+          myCurrent[my_indice(edge, 1, 0, 2, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jzloc[4][1];
 
           j1 = wii[1];
           i1 = wii[0] - 2;
-          current->Jx(i1, j1, k1) += Jxloc[0][2];
-          current->Jy(i1, j1, k1) += Jyloc[0][2];
-          current->Jz(i1, j1, k1) += Jzloc[0][2];
+          myCurrent[my_indice(edge, 1, 0, 0, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jxloc[0][2];
+          myCurrent[my_indice(edge, 1, 0, 1, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jyloc[0][2];
+          myCurrent[my_indice(edge, 1, 0, 2, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jzloc[0][2];
 
           i1 = wii[0] - 1;
-          current->Jx(i1, j1, k1) += Jxloc[1][2];
-          current->Jy(i1, j1, k1) += Jyloc[1][2];
-          current->Jz(i1, j1, k1) += Jzloc[1][2];
+          myCurrent[my_indice(edge, 1, 0, 0, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jxloc[1][2];
+          myCurrent[my_indice(edge, 1, 0, 1, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)]  += Jyloc[1][2];
+          myCurrent[my_indice(edge, 1, 0, 2, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jzloc[1][2];
 
           i1 = wii[0];
-          current->Jx(i1, j1, k1) += Jxloc[2][2];
-          current->Jy(i1, j1, k1) += Jyloc[2][2];
-          current->Jz(i1, j1, k1) += Jzloc[2][2];
+          myCurrent[my_indice(edge, 1, 0, 0, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jxloc[2][2];
+          myCurrent[my_indice(edge, 1, 0, 1, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jyloc[2][2];
+          myCurrent[my_indice(edge, 1, 0, 2, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jzloc[2][2];
 
           i1 = 1 + wii[0];
-          current->Jx(i1, j1, k1) += Jxloc[3][2];
-          current->Jy(i1, j1, k1) += Jyloc[3][2];
-          current->Jz(i1, j1, k1) += Jzloc[3][2];
+          myCurrent[my_indice(edge, 1, 0, 0, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jxloc[3][2];
+          myCurrent[my_indice(edge, 1, 0, 1, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jyloc[3][2];
+          myCurrent[my_indice(edge, 1, 0, 2, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jzloc[3][2];
 
           i1 = 2 + wii[0];
-          current->Jx(i1, j1, k1) += Jxloc[4][2];
-          current->Jy(i1, j1, k1) += Jyloc[4][2];
-          current->Jz(i1, j1, k1) += Jzloc[4][2];
+          myCurrent[my_indice(edge, 1, 0, 0, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jxloc[4][2];
+          myCurrent[my_indice(edge, 1, 0, 1, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jyloc[4][2];
+          myCurrent[my_indice(edge, 1, 0, 2, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jzloc[4][2];
 
           j1 = 1 + wii[1];
           i1 = wii[0] - 2;
-          current->Jx(i1, j1, k1) += Jxloc[0][3];
-          current->Jy(i1, j1, k1) += Jyloc[0][3];
-          current->Jz(i1, j1, k1) += Jzloc[0][3];
+          myCurrent[my_indice(edge, 1, 0, 0, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jxloc[0][3];
+          myCurrent[my_indice(edge, 1, 0, 1, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)]  += Jyloc[0][3];
+          myCurrent[my_indice(edge, 1, 0, 2, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jzloc[0][3];
 
           i1 = wii[0] - 1;
-          current->Jx(i1, j1, k1) += Jxloc[1][3];
-          current->Jy(i1, j1, k1) += Jyloc[1][3];
-          current->Jz(i1, j1, k1) += Jzloc[1][3];
+          myCurrent[my_indice(edge, 1, 0, 0, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jxloc[1][3];
+          myCurrent[my_indice(edge, 1, 0, 1, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)]  += Jyloc[1][3];
+          myCurrent[my_indice(edge, 1, 0, 2, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jzloc[1][3];
 
           i1 = wii[0];
-          current->Jx(i1, j1, k1) += Jxloc[2][3];
-          current->Jy(i1, j1, k1) += Jyloc[2][3];
+          myCurrent[my_indice(edge, 1, 0, 0, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jxloc[2][3];
+          myCurrent[my_indice(edge, 1, 0, 1, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)]  += Jyloc[2][3];
           current->Jz(i1, j1, k1) += Jzloc[2][3];
 
           i1 = 1 + wii[0];
-          current->Jx(i1, j1, k1) += Jxloc[3][3];
-          current->Jy(i1, j1, k1) += Jyloc[3][3];
-          current->Jz(i1, j1, k1) += Jzloc[3][3];
+          myCurrent[my_indice(edge, 1, 0, 0, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jxloc[3][3];
+          myCurrent[my_indice(edge, 1, 0, 1, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)]  += Jyloc[3][3];
+          myCurrent[my_indice(edge, 1, 0, 2, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jzloc[3][3];
 
           i1 = 2 + wii[0];
-          current->Jx(i1, j1, k1) += Jxloc[4][3];
-          current->Jy(i1, j1, k1) += Jyloc[4][3];
-          current->Jz(i1, j1, k1) += Jzloc[4][3];
+          myCurrent[my_indice(edge, 1, 0, 0, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jxloc[4][3];
+          myCurrent[my_indice(edge, 1, 0, 1, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)]  += Jyloc[4][3];
+          myCurrent[my_indice(edge, 1, 0, 2, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jzloc[4][3];
 
           j1 = 2 + wii[1];
           i1 = wii[0] - 2;
-          current->Jx(i1, j1, k1) += Jxloc[0][4];
-          current->Jy(i1, j1, k1) += Jyloc[0][4];
-          current->Jz(i1, j1, k1) += Jzloc[0][4];
+          myCurrent[my_indice(edge, 1, 0, 0, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jxloc[0][4];
+          myCurrent[my_indice(edge, 1, 0, 1, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)]  += Jyloc[0][4];
+          myCurrent[my_indice(edge, 1, 0, 2, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jzloc[0][4];
 
           i1 = wii[0] - 1;
-          current->Jx(i1, j1, k1) += Jxloc[1][4];
-          current->Jy(i1, j1, k1) += Jyloc[1][4];
-          current->Jz(i1, j1, k1) += Jzloc[1][4];
+          myCurrent[my_indice(edge, 1, 0, 0, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jxloc[1][4];
+          myCurrent[my_indice(edge, 1, 0, 1, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)]  += Jyloc[1][4];
+          myCurrent[my_indice(edge, 1, 0, 2, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jzloc[1][4];
 
           i1 = wii[0];
-          current->Jx(i1, j1, k1) += Jxloc[2][4];
-          current->Jy(i1, j1, k1) += Jyloc[2][4];
-          current->Jz(i1, j1, k1) += Jzloc[2][4];
+          myCurrent[my_indice(edge, 1, 0, 0, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jxloc[2][4];
+          myCurrent[my_indice(edge, 1, 0, 1, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)]  += Jyloc[2][4];
+          myCurrent[my_indice(edge, 1, 0, 2, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jzloc[2][4];
 
           i1 = 1 + wii[0];
-          current->Jx(i1, j1, k1) += Jxloc[3][4];
-          current->Jy(i1, j1, k1) += Jyloc[3][4];
-          current->Jz(i1, j1, k1) += Jzloc[3][4];
+          myCurrent[my_indice(edge, 1, 0, 0, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jxloc[3][4];
+          myCurrent[my_indice(edge, 1, 0, 1, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)]  += Jyloc[3][4];
+          myCurrent[my_indice(edge, 1, 0, 2, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jzloc[3][4];
 
           i1 = 2 + wii[0];
-          current->Jx(i1, j1, k1) += Jxloc[4][4];
-          current->Jy(i1, j1, k1) += Jyloc[4][4];
-          current->Jz(i1, j1, k1) += Jzloc[4][4];
+          myCurrent[my_indice(edge, 1, 0, 0, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jxloc[4][4];
+          myCurrent[my_indice(edge, 1, 0, 1, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)]  += Jyloc[4][4];
+          myCurrent[my_indice(edge, 1, 0, 2, i1, j1, k1, N_grid[0], N_grid[1], N_grid[2], current->Ncomp)] += Jzloc[4][4];
 
 
 
